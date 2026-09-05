@@ -9,6 +9,8 @@ class PcmiBank extends Model
 {
     protected $fillable = [
         'bank_id',
+        'type', // Bank, Credit Card
+        'user_id', // For Credit Card holder
         'account_no',
         'branch',
         'swift_code',
@@ -18,5 +20,10 @@ class PcmiBank extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

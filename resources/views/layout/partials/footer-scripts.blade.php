@@ -317,6 +317,8 @@
          'contracts',
          'estimations-kanban',
          'estimations',
+         'employees',
+         'employees.index',
          'invoices',
          'invoices.index',
          'invoice-grid',
@@ -330,7 +332,9 @@
          'packages',
          'packages-grid',
          'domain',
-         'purchase-transaction'
+         'purchase-transaction',
+         'rvs',
+         'rvs.index'
      ]))
      <!-- Datetimepicker JS -->
      <script src="{{ URL::asset('build/js/bootstrap-datetimepicker.min.js') }}"></script>
@@ -455,9 +459,13 @@
         'contracts',
         'estimations-kanban',
         'estimations',
+        'employees',
+        'employees.index',
         'invoices',
         'invoices.index',
         'invoice-grid',
+        'rvs',
+        'rvs.index',
         'kanban-view',
         'invoice',
         'proposals',

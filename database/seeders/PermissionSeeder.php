@@ -54,9 +54,14 @@ class PermissionSeeder extends Seeder
             ],
             'proposals' => [
                 ['index', 'GET'], ['create', 'POST'], ['readAll', 'GET'], ['read', 'GET'],
-                ['boqs', 'GET'], ['update', 'PUT'], ['delete', 'DELETE']
+                ['boqs', 'GET'], ['update', 'PUT'], ['delete', 'DELETE'],
+                ['pdf', 'GET'], ['getPricingModel', 'GET'], ['savePricingModel', 'PUT'], ['getAvailableBoqs', 'GET']
             ],
             'invoices' => [
+                ['index', 'GET'], ['create', 'POST'], ['readAll', 'GET'], ['read', 'GET'],
+                ['update', 'PUT'], ['delete', 'DELETE'], ['pdf', 'GET']
+            ],
+            'employees' => [
                 ['index', 'GET'], ['create', 'POST'], ['readAll', 'GET'], ['read', 'GET'],
                 ['update', 'PUT'], ['delete', 'DELETE']
             ],
@@ -66,6 +71,22 @@ class PermissionSeeder extends Seeder
             ],
             'banks' => [
                 ['index', 'GET'], ['create', 'POST'], ['readAll', 'GET'], ['read', 'GET'],
+                ['update', 'PUT'], ['delete', 'DELETE']
+            ],
+            'pcmibanks' => [
+                ['index', 'GET'], ['create', 'POST'], ['readAll', 'GET'], ['read', 'GET'],
+                ['update', 'PUT'], ['delete', 'DELETE']
+            ],
+            'billing-options' => [
+                ['index', 'GET'], ['create', 'POST'], ['read', 'GET'],
+                ['update', 'PUT'], ['delete', 'DELETE']
+            ],
+            'rvs' => [
+                ['index', 'GET'], ['create', 'POST'], ['read', 'GET'],
+                ['update', 'PUT'], ['delete', 'DELETE']
+            ],
+            'pvs' => [
+                ['index', 'GET'], ['create', 'POST'], ['read', 'GET'],
                 ['update', 'PUT'], ['delete', 'DELETE']
             ],
         ];
@@ -117,6 +138,9 @@ class PermissionSeeder extends Seeder
             'unbindProposal' => "/{$prefix}/unbind-proposal/{boq_id?}",
             'boqs' => "/proposals/{proposal_id}/boqs",
             'preview' => "/{$prefix}/preview",
+            'getPricingModel', 'savePricingModel' => "/proposals/{proposal_id}/pricing-model",
+            'getAvailableBoqs' => "/proposals/{proposal_id}/available-boqs",
+            'pdf' => "/{$prefix}/{id}/pdf",
             default => "/{$prefix}/{$action}"
         };
     }

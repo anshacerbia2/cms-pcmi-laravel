@@ -99,6 +99,7 @@ class InvoiceController extends Controller
                                     href="javascript:void(0)" 
                                     data-url="'.route('invoices.read', ['invoice_id' => $invoice->id]).'"
                                     data-proposal_id="'.$invoice->proposal?->id.'"
+                                    data-project_id="'.$invoice->project?->id.'"
                                 >
                                     <i class="ti ti-edit text-blue"></i> Edit
                                 </a>
@@ -153,6 +154,24 @@ class InvoiceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage() ?: 'Internal Server Error'
+            ], 500);
+        }
+    }
+
+    public function readUnpaid(Request $request): JsonResponse
+    {
+        try {
+            $customerId = $request->query('customer_id');
+            $invoices = $this->invoiceService->getUnpaidInvoices($customerId);
+
+            return response()->json([
+                'success' => true,
+                'data' => $invoices
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Failed to fetch unpaid invoices'
             ], 500);
         }
     }

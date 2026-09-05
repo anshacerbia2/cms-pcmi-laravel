@@ -32,7 +32,8 @@ class DatabaseSeeder extends Seeder
             BoqSeeder::class,
             BankSeeder::class,
             PcmiBankSeeder::class,
-            PdfTemplateSeeder::class
+            PdfTemplateSeeder::class,
+            EmployeeSeeder::class
         ]);
     }
 }

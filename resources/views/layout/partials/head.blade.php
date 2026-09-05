@@ -223,6 +223,8 @@
          'contracts',
          'estimations-kanban',
          'estimations',
+         'employees',
+         'employees.index',
          'invoices',
          'invoices.index',
          'invoice-grid',
@@ -234,7 +236,9 @@
          'packages',
          'packages-grid',
          'domain',
-         'purchase-transaction'
+         'purchase-transaction',
+         'rvs',
+         'rvs.index'
      ]))
  <link rel="stylesheet" href="{{ url('build/css/bootstrap-datetimepicker.min.css') }}">
  @endif

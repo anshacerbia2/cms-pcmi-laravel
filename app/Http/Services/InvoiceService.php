@@ -186,13 +186,36 @@ class InvoiceService
         return $invoice;
     }
 
+    public function getUnpaidInvoices($customerId = null)
+    {
+        $query = Invoice::where('payment_status', '!=', 'FULLY PAID');
+            // ->whereNotIn('status', ['VOID', 'REVISED'])
+            // ->where('balance_due', '>', 0);
+
+        if ($customerId) {
+            $query->where('customer_id', $customerId);
+        }
+
+        return $query->with(['customer', 'proposal', 'project'])->get();
+    }
+
     public function updateInvoice(array $data)
     {
         return DB::transaction(function () use ( $data) {
-            $invoice = Invoice::find($data['id']);
+            $invoice = Invoice::withCount('receiveVouchers')->find($data['id']);
 
             if (!$invoice) {
                 throw new Exception("Invoice with ID {$data['id']} not found.");
+            }
+
+            // --- DATA INTEGRITY GUARD ---
+            if ($invoice->receive_vouchers_count > 0) {
+                $sensitiveFields = ['tax_type', 'total_amount', 'customer_id'];
+                foreach ($sensitiveFields as $field) {
+                    if (isset($data[$field]) && $data[$field] != $invoice->$field) {
+                        throw new Exception("Cannot change sensitive field '{$field}' because this invoice already has linked Receive Vouchers. Please delete the RV first if you need to reconfigure the tax/amount.");
+                    }
+                }
             }
 
             // ------------------------------ FIT Project Flow ------------------------------

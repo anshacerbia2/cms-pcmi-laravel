@@ -97,7 +97,7 @@ class BankController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $banks
-                ], 201);
+                ], 200);
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,

@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id();
             // FK to banks table (bank name comes from here)
             $table->foreignId('bank_id')->constrained('banks')->cascadeOnUpdate()->restrictOnDelete();
+            $table->enum('type', ['Bank', 'Credit Card'])->default('Bank');
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('account_no', 50);
             $table->string('branch')->nullable();
             $table->string('swift_code', 20)->nullable();

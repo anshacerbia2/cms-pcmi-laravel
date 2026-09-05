@@ -310,7 +310,7 @@ class InvoiceForm {
       this.selectedItems = Array.from(unique.values());
       this.updateSelectedEl();
       this.checkAndAutoChangeType();
-    } else if (target.matches("#input_invoice_vat_rate") || target.matches("#input_invoice_management_fee_type")) {
+    } else if (target.matches("#input_invoice_vat_rate") || target.matches("#input_invoice_management_fee_type") || target.matches("#input_invoice_tax_type")) {
       this.calculateFitAmount();
     }
   }
@@ -548,6 +548,7 @@ class InvoiceForm {
     const mgmtFeeRaw = this.form.querySelector("#input_invoice_management_fee")?.value || "0";
     const mgmtFee = parseFloat(normalizeFormatRupiah(mgmtFeeRaw).replace(",", ".")) || 0;
     const mgmtType = this.form.querySelector("#input_invoice_management_fee_type")?.value || "percent";
+    const taxType = this.form.querySelector("#input_invoice_tax_type")?.value || "Tax - Non WAPU";
 
     let mgmtAmount = 0;
     if (mgmtType === "percent") {
@@ -557,7 +558,11 @@ class InvoiceForm {
     }
 
     const salesAmount = basicPrice + mgmtAmount;
-    const vatAmount = (salesAmount * vatRate) / 100;
+    let vatAmount = 0;
+
+    if (taxType !== "No Tax") {
+      vatAmount = (salesAmount * vatRate) / 100;
+    }
     const totalAmount = salesAmount + vatAmount;
 
     const calcField = this.form.querySelector("#input_invoice_calculated_amount");
@@ -607,7 +612,7 @@ class InvoiceForm {
 
     return `
       <div>
-        <label class="col-form-label">BoQ(s)</label>
+        <label class="col-form-label">Sales Item(s)</label>
         <ul id="selected_invoice_canvas_proposal_item" class="mt-2 mb-2">${selectedProposalEl}</ul>
       </div>
       <div style="border: 1px solid #e8e8e8; border-radius: 6px;">
@@ -1173,7 +1178,6 @@ class InvoiceForm {
     });
   }
 
-
   initPlugins() {
     if (window.$ && $.fn.select2) {
       $('.select').select2({
@@ -1559,22 +1563,36 @@ document.addEventListener("DOMContentLoaded", () => {
         IS_FETCHING = true;
 
         try {
-          const url = target.dataset.url;
-          const type = target.dataset.type;
+          let url = target.dataset.url;
+          let type = target.dataset.type;
+
+          // --- Intelligent Context Detection ---
+          // If button is "naked" (no url/type), check for global context anchors
+          if (!url && !type) {
+            try {
+              if (typeof PROPOSAL_ID !== 'undefined' && PROPOSAL_ID) {
+                url = `/proposals/${PROPOSAL_ID}`;
+                type = "proposal";
+              } else if (typeof PROJECT_ID !== 'undefined' && PROJECT_ID) {
+                url = `/projects/${PROJECT_ID}`;
+                type = "fit";
+              }
+            } catch (e) { }
+          }
 
           if (!url && !type) {
+            // General Create Mode (Invoice list page)
             INVOICE_CANVAS_BS.show();
             INVOICE_FORM.resetForm();
             await INVOICE_FORM.init({ mode: "create" });
           } else {
-            const resopnse = await fetch(url, {
-              headers: {
-                "Accept": "application/json",
-              },
+            // Contextual Create Mode (Detail pages or specific buttons)
+            const response = await fetch(url, {
+              headers: { "Accept": "application/json" },
             });
-            const resJson = await resopnse.json();
+            const resJson = await response.json();
 
-            if (resopnse.ok && resJson.success) {
+            if (response.ok && resJson.success) {
               const data = resJson.data;
 
               INVOICE_CANVAS_BS.show();
@@ -1585,12 +1603,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 await INVOICE_FORM.init({ mode: "create", proposal: data });
               }
             } else {
-              showToast("error", resJson.message || "Failed to retrieve proposal data for invoice creation.");
+              showToast("error", resJson.message || "Failed to retrieve context data for invoice creation.");
             }
           }
         } catch (error) {
           console.error(error);
-          showToast("error", "An error occurred while retrieving proposal data for invoice creation.");
+          showToast("error", "An error occurred while setting up invoice creation.");
         } finally {
           IS_FETCHING = false;
         }
@@ -1609,71 +1627,52 @@ document.addEventListener("DOMContentLoaded", () => {
           let project_id = target.dataset.project_id;
           const invoiceUrl = target.dataset.url;
 
-          // Try to get global PROPOSAL_ID if not in dataset, ensuring we don't overwrite if dataset exists (though logic below prioritizes dataset)
-          // Actually, simply check if global PROPOSAL_ID exists and is valid if dataset is missing
-          try {
-            if (PROPOSAL_ID) {
-              proposal_id = PROPOSAL_ID;
-            }
-          } catch (error) { }
+          // Attempt to get global PROPOSAL_ID / PROJECT_ID if applicable
+          try { if (!proposal_id && typeof PROPOSAL_ID !== 'undefined') proposal_id = PROPOSAL_ID; } catch (e) { }
+          try { if (!project_id && typeof PROJECT_ID !== 'undefined') project_id = PROJECT_ID; } catch (e) { }
 
-          try {
-            if (PROJECT_ID) {
-              project_id = PROJECT_ID;
-            }
-          } catch (error) { }
+          // --- Step 1: Fetch Invoice Data First ---
+          const invoiceRes = await fetch(invoiceUrl, {
+            headers: { "Content-Type": "application/json", "Accept": "application/json" }
+          });
+          const invoiceJson = await invoiceRes.json();
 
-          const promises = [
-            fetch(invoiceUrl, {
-              headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-              },
-            })
-          ];
-
-          let isFit = false;
-
-          if (proposal_id) {
-            promises.push(
-              fetch(`/proposals/${proposal_id}`, {
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-                },
-              })
-            );
-          } else if (project_id) {
-            isFit = true;
-            promises.push(
-              fetch(`/projects/${project_id}`, {
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-                },
-              })
-            );
-          } else {
-            showToast("error", "Missing Proposal or Project ID for invoice editing.");
+          if (!invoiceRes.ok || !invoiceJson.success) {
+            showToast("error", invoiceJson?.message || "Failed to fetch invoice data.");
             IS_FETCHING = false;
             return;
           }
 
-          const results = await Promise.all(promises);
-          const invoiceRes = results[0]; // First promise is always invoice
-          const contextRes = results[1]; // Second is context (proposal or project)
+          const invoice = invoiceJson.data;
 
-          const invoiceJson = await invoiceRes.json();
+          // Re-verify IDs from fetched invoice data if they were missing from dataset
+          if (!proposal_id) proposal_id = invoice.proposal_id;
+          if (!project_id) project_id = invoice.project_id;
+
+          // --- Step 2: Fetch Context (Proposal or Project) ---
+          let contextRes = null;
+          let isFit = false;
+
+          if (proposal_id) {
+            contextRes = await fetch(`/proposals/${proposal_id}`, {
+              headers: { "Content-Type": "application/json", "Accept": "application/json" }
+            });
+          } else if (project_id) {
+            isFit = true;
+            contextRes = await fetch(`/projects/${project_id}`, {
+              headers: { "Content-Type": "application/json", "Accept": "application/json" }
+            });
+          }
+
+          if (!contextRes) {
+            showToast("error", "Missing Proposal or Project reference in this invoice.");
+            IS_FETCHING = false;
+            return;
+          }
+
           const contextJson = await contextRes.json();
 
-          if (
-            invoiceRes.ok && invoiceJson.success &&
-            contextRes.ok && contextJson.success
-          ) {
-            const invoice = invoiceJson.data;
+          if (contextRes.ok && contextJson.success) {
             const contextData = contextJson.data;
             INVOICE_CANVAS_BS.show();
             INVOICE_FORM.resetForm();
@@ -1684,17 +1683,11 @@ document.addEventListener("DOMContentLoaded", () => {
               await INVOICE_FORM.init({ mode: "edit", proposal: contextData, data: invoice });
             }
           } else {
-            if (!invoiceRes.ok || !invoiceJson.success) {
-              showToast("error", invoiceJson?.message || "Failed to fetch invoice data.");
-            } else if (!contextRes.ok || !contextJson.success) {
-              showToast("error", contextJson?.message || "Failed to fetch context data.");
-            } else {
-              showToast("error", "Failed to fetch required data.");
-            }
+            showToast("error", contextJson?.message || "Failed to fetch related project/proposal data.");
           }
         } catch (error) {
           console.error(error);
-          showToast("error", "An error occurred while retrieving invoice data for invoice creation.");
+          showToast("error", "An error occurred while retrieving invoice context.");
         } finally {
           IS_FETCHING = false;
         }

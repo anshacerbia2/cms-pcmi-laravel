@@ -113,13 +113,13 @@ class UserController extends Controller
 		}
 	}
 
-	public function readAll(): JsonResponse
+	public function readAll(Request $request): JsonResponse
 	{
 		if ($request->wantsJson() || $request->ajax()) {
 			try {
 				$users = $this->userService->getAllUsers();
 				return response()->json([
-					'status' => 'success',
+					'success' => true,
 					'data' => $users
 				], 200);
 			} catch (\Exception $e) {

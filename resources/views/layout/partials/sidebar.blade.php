@@ -90,10 +90,15 @@ use App\Http\Services\MenuService;
 							'categories.index',
 							'products.index',
 						],
+						'Finance' => [
+							'rvs.index',
+							'pvs.index',
+						],
 						'Main' => [
 							'contacts.index',
 							'companies.index',
 							'customers.index',
+							'employees.index',
 							'suppliers.index',
 							'projects.index',
 							'proposals.index',

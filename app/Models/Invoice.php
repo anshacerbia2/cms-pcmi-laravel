@@ -28,6 +28,10 @@ class Invoice extends Model
         'billing_type', 
         'tax_type', 
         'total_amount',
+        'total_received_amount',
+        'balance_due',
+        'total_pph23_deduction',
+        'total_bank_charge',
         'status',
         'payment_status', 
         'management_fee_type',
@@ -65,6 +69,10 @@ class Invoice extends Model
 
     public function getVatAmountAttribute()
     {
+        if ($this->tax_type === 'No Tax') {
+            return 0;
+        }
+
         $salesAmount = $this->sales_amount;
         $vatRate = (float) $this->vat_rate;
         return ($salesAmount * $vatRate) / 100;
@@ -156,6 +164,45 @@ class Invoice extends Model
 
     public function items(): HasMany   {
         return $this->hasMany(SalesItem::class, 'invoice_id');
+    }
+
+    public function receiveVouchers()
+    {
+        return $this->belongsToMany(ReceiveVoucher::class, 'invoice_receive_voucher')
+            ->withPivot(['amount_applied', 'ppn_wapu_deduction', 'pph23_deduction', 'bank_charge', 'others_adjustment', 'adjustment_description'])
+            ->withTimestamps();
+    }
+
+    public function recalculateReconciliation()
+    {
+        $vouchers = $this->receiveVouchers;
+        
+        $totalApplied = $vouchers->sum('pivot.amount_applied');
+        $totalPph23 = $vouchers->sum('pivot.pph23_deduction');
+        $totalBankCharge = $vouchers->sum('pivot.bank_charge');
+        $totalWapu = $vouchers->sum('pivot.ppn_wapu_deduction');
+        $totalOthers = $vouchers->sum('pivot.others_adjustment');
+
+        $this->total_received_amount = (float) $totalApplied;
+        $this->total_pph23_deduction = (float) $totalPph23;
+        $this->total_bank_charge = (float) $totalBankCharge;
+
+        // Balance Due = total_amount - (Total Applied + Deductions)
+        // Deductions here include PPh23, Bank Charge, WAPU (if any), and Others
+        $totalReductions = $totalApplied + $totalPph23 + $totalBankCharge + $totalWapu + $totalOthers;
+        
+        $this->balance_due = max(0, $this->total_amount - $totalReductions);
+
+        // Auto-update payment status
+        if ($this->balance_due <= 0 && $this->total_amount > 0) {
+            $this->payment_status = 'FULLY PAID';
+        } elseif ($this->total_received_amount > 0) {
+            $this->payment_status = 'PARTLY PAID';
+        } else {
+            $this->payment_status = 'UNPAID';
+        }
+
+        $this->save();
     }
 
     /**

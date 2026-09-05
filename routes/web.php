@@ -20,6 +20,9 @@ use App\Http\Middlewares\PermissionMiddleware;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\PcmiBankController;
 use App\Http\Controllers\BillingOptionController;
+use App\Http\Controllers\ReceiveVoucherController;
+use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\EmployeeController;
 
 // Route::get('deals-dashboard', [CustomAuthController::class, 'deals-dashboard']); 
 // Route::get('index', [CustomAuthController::class, 'index'])->name('index');
@@ -143,6 +146,16 @@ Route::middleware([AuthMiddleware::class, PermissionMiddleware::class])->group(f
         Route::delete('/{customer_id}', 'delete')->name('delete'); 
     });
 
+    Route::prefix('employees')->name('employees.')
+    ->controller(EmployeeController::class)->group(function() {
+        Route::get('/', 'index')->name('index'); 
+        Route::post('/', 'create')->name('create'); 
+        Route::get('/all', 'readAll')->name('readAll'); 
+        Route::get('/{employee_id}', 'read')->name('read'); 
+        Route::put('/{employee_id}', 'update')->name('update'); 
+        Route::delete('/{employee_id}', 'delete')->name('delete'); 
+    });
+
     Route::prefix('projects')->name('projects.')
     ->controller(ProjectController::class)->group(function() {
         Route::get('/', 'index')->name('index'); 
@@ -176,6 +189,7 @@ Route::middleware([AuthMiddleware::class, PermissionMiddleware::class])->group(f
         Route::get('/', 'index')->name('index'); 
         Route::post('/', 'create')->name('create'); 
         Route::get('/all', 'readAll')->name('readAll'); 
+        Route::get('/unpaid', 'readUnpaid')->name('unpaid'); 
         Route::get('/{invoice_id}', 'read')->name('read'); 
         Route::put('/{invoice_id}', 'update')->name('update'); 
         Route::delete('/{invoice_id}', 'delete')->name('delete'); 
@@ -220,6 +234,24 @@ Route::middleware([AuthMiddleware::class, PermissionMiddleware::class])->group(f
         Route::get('/{billing_option_id}', 'read')->name('read'); 
         Route::put('/{billing_option_id}', 'update')->name('update'); 
         Route::delete('/{billing_option_id}', 'delete')->name('delete'); 
+    });
+
+    Route::prefix('rvs')->name('rvs.')
+    ->controller(ReceiveVoucherController::class)->group(function() {
+        Route::get('/', 'index')->name('index'); 
+        Route::post('/', 'create')->name('create'); 
+        Route::get('/{rv_id}', 'read')->name('read'); 
+        Route::put('/{rv_id}', 'update')->name('update'); 
+        Route::delete('/{rv_id}', 'delete')->name('delete'); 
+    });
+
+    Route::prefix('pvs')->name('pvs.')
+    ->controller(PaymentVoucherController::class)->group(function() {
+        Route::get('/', 'index')->name('index'); 
+        Route::post('/', 'create')->name('create'); 
+        Route::get('/{pv_id}', 'read')->name('read'); 
+        Route::put('/{pv_id}', 'update')->name('update'); 
+        Route::delete('/{pv_id}', 'delete')->name('delete'); 
     });
     
 });

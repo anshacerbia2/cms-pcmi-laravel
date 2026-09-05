@@ -68,6 +68,10 @@ return new class extends Migration
 
             // Invoice Amount
             $table->decimal('total_amount', 15, 2);
+            $table->decimal('total_received_amount', 20, 2)->default(0);
+            $table->decimal('balance_due', 20, 2)->default(0);
+            $table->decimal('total_pph23_deduction', 20, 2)->default(0);
+            $table->decimal('total_bank_charge', 20, 2)->default(0);
 
             // Invoice Status
             $table->enum('status', ['VOID', 'REVISED', 'PREPARED', 'SENT'])->default('PREPARED');
